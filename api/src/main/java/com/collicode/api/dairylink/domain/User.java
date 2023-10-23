@@ -64,10 +64,11 @@ public class User implements UserDetails {
     @UpdateTimestamp
     private LocalDateTime lastUpdatedAt;
 
-    //Object Relationships
-    @ManyToOne
-    @JoinColumn(name="cooperative_id")
-    Cooperative cooperative;
+    //Cooperative Details
+    private String cooperativeName;
+    @Enumerated(EnumType.STRING)
+    private CooperativeStatus cooperativeStatus;
+
 
 
 
