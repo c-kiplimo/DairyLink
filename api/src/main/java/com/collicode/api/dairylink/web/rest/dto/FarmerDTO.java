@@ -19,6 +19,8 @@ public class FarmerDTO {
     private String subCounty;
     private String ward;
     private String village;
+    private int numberOfCows;
+    private int numberOfLactatingCows;
     private LocalDateTime createdAt;
     private String createdBy;
     private LocalDateTime lastUpdatedAt;
