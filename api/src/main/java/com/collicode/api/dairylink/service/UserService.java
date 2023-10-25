@@ -2,16 +2,20 @@ package com.collicode.api.dairylink.service;
 
 import com.collicode.api.dairylink.domain.ConfirmationToken;
 import com.collicode.api.dairylink.domain.User;
+import com.collicode.api.dairylink.domain.enums.FarmerStatus;
+import com.collicode.api.dairylink.domain.enums.UserRole;
 import com.collicode.api.dairylink.repository.UserRepository;
 import com.collicode.api.dairylink.service.mapper.CooperativeMapper;
 import com.collicode.api.dairylink.service.mapper.FarmerMapper;
 import com.collicode.api.dairylink.service.mapper.UserMapper;
+import com.collicode.api.dairylink.web.rest.request.FarmerRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -31,40 +35,57 @@ public class UserService {
         this.userMapper = userMapper;
         this.farmerMapper = farmerMapper;
     }
-    public List<Object> signupFarmerAsUser(User user){
-        log.info("Signup up User");
-        boolean userEmailExists = userRepository.findByEmail(user.getEmail())
-                .isPresent();
-
-        if (userEmailExists) {
-            throw new IllegalStateException(String.format(USER_EXISTS, user.getEmail()));
-        }
-        //set Details
-        user.setPassword(user.getPassword());
-        user.setCreatedAt(LocalDateTime.now());
-        user.setCreatedBy("System");
-
-        //save the User in the database
-        User user1 =userRepository.save(user);
-        log.info("Farmer User saved");
-
-        //Generate a Random 6 digit OTP -0-999999
-        int randomOTP = (int) ((Math.random() * (999999 - 1)) + 1);
-        String token = String.format("%06d", randomOTP);
-
-        ConfirmationToken confirmationToken = new ConfirmationToken(
-                token,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusMinutes(60*48), // expires after 2 days of generation
-                user
-        );
-        confirmationTokenService.saveConfirmationToken(confirmationToken);
-        log.info("Confirmation token generated");
-
-        List<Object> response = new ArrayList<>();
-        response.add(user1.getId());
-        response.add(token);
-
-        return response;
+    //check if farmer exists
+    public  boolean doesUserExistsByEmailAddress(String email){
+        Optional<User> farmer = userRepository.findUserByEmail(email);
+        return  farmer.isPresent();
     }
+   public User addNewFarmer(User userDetails, FarmerRequest farmerRequest){
+        log.info("add a new farmer");
+
+        //check if farmer already exists
+       if (doesUserExistsByEmailAddress(farmerRequest.getEmail())){
+           throw new IllegalStateException("Farmer with provided email already exists ");
+       }
+       User user = new User();
+       log.info("Creating new farmer started");
+       if (userDetails!=null){
+           user.setCreatedBy(userDetails.getFullName());
+           user.setAddedBy(userDetails);
+       }
+       user.setFirstName(farmerRequest.getFirstName());
+       user.setLastName(farmerRequest.getLastName());
+       user.setFullName(farmerRequest.getFirstName() + ' ' +user.getLastName());
+       user.setMsisdn(farmerRequest.getMsisdn());
+       user.setEmail(farmerRequest.getEmail());
+       user.setUsername(farmerRequest.getEmail());
+       user.setFarmerStatus(FarmerStatus.ACTIVE);
+       user.setUserRole(UserRole.FARMER);
+       user.setCounty(farmerRequest.getCounty());
+       user.setSubcounty(farmerRequest.getSubCounty());
+       user.setWard(farmerRequest.getWard());
+       user.setWard(farmerRequest.getWard());
+       user.setCreatedAt(LocalDateTime.now());
+
+       //save farmer
+       User saveFarmer = userRepository.save(user);
+
+       //Generate a Random 6 digit OTP - 0-999999
+       int randomOTP = (int) ((Math.random() * (999999 - 1)) + 1);
+       String token = String.format("%06d", randomOTP);
+
+       ConfirmationToken confirmationToken = new ConfirmationToken(
+               token,
+               LocalDateTime.now(),
+               LocalDateTime.now().plusMinutes(60*48),
+               user
+       );
+       confirmationTokenService.saveConfirmationToken(confirmationToken);
+       log.info("Confirmation token generated");
+
+       return  saveFarmer;
+
+
+
+   }
 }
