@@ -7,6 +7,7 @@ import com.collicode.api.dairylink.domain.enums.CooperativeStatus;
 import com.collicode.api.dairylink.domain.enums.UserRole;
 import com.collicode.api.dairylink.repository.UserRepository;
 import com.collicode.api.dairylink.util.EmailValidator;
+import com.collicode.api.dairylink.web.rest.request.ForgotPassword;
 import com.collicode.api.dairylink.web.rest.request.RegistrationRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -147,5 +148,30 @@ public class RegistrationService {
         //sending confirmation OTP
 
         return "OTP SENT TO " + msisdn;
+    }
+    // Reset Password
+    public String reset(ForgotPassword forgotPassword) {
+        log.info("Resetting Password");
+
+        Optional<User> userOptional = userService.findByMsisdn(forgotPassword.getMsisdn());
+
+        if (userOptional.isEmpty()) {
+            throw new IllegalStateException(String.format(PHONE_NOT_VALID, forgotPassword.getMsisdn()));
+        }
+        User user = userOptional.get();
+
+        // VERIFY TOKEN
+        confirmToken(forgotPassword.getOtp());
+        // Add user
+        String encodedPassword = passwordEncoder.encode(forgotPassword.getPassword());
+
+        // Set details
+        user.setPassword(encodedPassword);
+
+        // save the User in the database
+        userRepository.save(user);
+        log.info("User Updated Successfully");
+
+        return "PASSWORD CHANGED SUCCESSFULLY";
     }
 }

@@ -5,6 +5,7 @@ import com.collicode.api.dairylink.domain.User;
 import com.collicode.api.dairylink.service.RegistrationService;
 import com.collicode.api.dairylink.service.UserService;
 import com.collicode.api.dairylink.web.rest.dto.RestResponse;
+import com.collicode.api.dairylink.web.rest.request.ForgotPassword;
 import com.collicode.api.dairylink.web.rest.request.RegistrationRequest;
 import com.collicode.api.dairylink.web.rest.request.UserTokenConfirmRequest;
 import lombok.AllArgsConstructor;
@@ -55,5 +56,42 @@ public class RegistrationResource {
             return  new ResponseEntity<>(new RestResponse(true, e.getMessage()),HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
+    }  @GetMapping(path = "reset")
+    public ResponseEntity<?> reset(@RequestParam("msisdn") String msisdn) {
+        try{
+            String response =registrationService.requestOTP(msisdn , "RESET");
+            return new ResponseEntity<>(new RestResponse(false,response),
+                    HttpStatus.OK);
+
+        } catch (Exception e){
+            return new ResponseEntity<>(new RestResponse(true,e.getMessage()),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
+    @GetMapping(path = "resend")
+    public ResponseEntity<?> resend(@RequestParam("msisdn") String msisdn) {
+        try{
+            String response =registrationService.requestOTP(msisdn,"RESEND");
+            return new ResponseEntity<>(new RestResponse(false,response),
+                    HttpStatus.OK);
+
+        } catch (Exception e){
+            return new ResponseEntity<>(new RestResponse(true,e.getMessage()),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @PostMapping(path = "forgot")
+    public ResponseEntity<?> forgot(@RequestBody ForgotPassword forgotPassword) {
+        try{
+            String response =registrationService.reset(forgotPassword);
+            return new ResponseEntity<>(new RestResponse(false,response),
+                    HttpStatus.OK);
+
+        } catch (Exception e){
+            return new ResponseEntity<>(new RestResponse(true,e.getMessage()),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
 }
