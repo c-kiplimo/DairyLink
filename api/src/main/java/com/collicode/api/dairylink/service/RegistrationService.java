@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -41,13 +42,14 @@ public class RegistrationService {
         this.userRepository = userRepository;
         this.confirmationTokenService = confirmationTokenService;
     }
-    public void  register(RegistrationRequest registrationRequest){
+
+    public void register(RegistrationRequest registrationRequest) {
         log.info("Registering  new User");
         boolean isValidemail = emailValidator.test(registrationRequest.getEmail());
 
         //Exception handling logic
-        if(!isValidemail){
-            throw new IllegalStateException(String.format(EMAIL_NOT_VALID,registrationRequest.getEmail()));
+        if (!isValidemail) {
+            throw new IllegalStateException(String.format(EMAIL_NOT_VALID, registrationRequest.getEmail()));
 
         }
         //check if email and phone number exists
@@ -60,7 +62,7 @@ public class RegistrationService {
             throw new IllegalStateException(String.format(PHONE_EXISTS, registrationRequest.getMsisdn()));
         }
         //create user
-        User cooperative =new User();
+        User cooperative = new User();
         cooperative.setCooperativeName(registrationRequest.getCooperativeName());
         cooperative.setEmail(registrationRequest.getEmail());
         cooperative.setMsisdn(cooperative.getMsisdn());
@@ -80,7 +82,7 @@ public class RegistrationService {
 
         //save the User in the database
         User savedCooperative = userRepository.save(cooperative);
-        log.info("User saved",savedCooperative);
+        log.info("User saved", savedCooperative);
 
         // Generate a Random 6 digit OTP - 0 - 999999
         int randomOTP = (int) ((Math.random() * (999999 - 1)) + 1);
@@ -93,11 +95,57 @@ public class RegistrationService {
                 cooperative
         );
 
-confirmationTokenService.saveConfirmationToken(confirmationToken);
-log.info("Confirmation token generated");
+        confirmationTokenService.saveConfirmationToken(confirmationToken);
+        log.info("Confirmation token generated");
         List<Object> response = new ArrayList<>();
         response.add(savedCooperative);
         response.add(token);
 
+    }
+
+    @Transactional
+    public String confirmToken(String token){
+        ConfirmationToken confirmationToken = confirmationTokenService.getToken(token).orElseThrow(() ->
+                new IllegalStateException("Token not Found!"));
+
+        if(confirmationToken.getConfirmedAt() != null){
+            throw new IllegalStateException("Email Already Confirmed!");
+        }
+
+        LocalDateTime expiredAt = confirmationToken.getExpiresAt();
+        if(expiredAt.isBefore(LocalDateTime.now())){
+            throw new IllegalStateException("Token Expired!");
+        }
+
+        confirmationTokenService.setConfirmedAt(token);
+        userService.enableAppUser(confirmationToken.getUser().getEmail());
+        return "Confirmed! You can now Login to your account";
+    }
+
+    public String requestOTP(String msisdn, String resend) {
+        log.info("Generating OTP");
+
+        Optional<User> userOptional = userService.findByMsisdn(msisdn);
+
+        if (userOptional.isEmpty()) {
+            throw new IllegalStateException(String.format(PHONE_NOT_VALID, msisdn));
+        }
+        User user = userOptional.get();
+        // Generate a Random 6 digit OTP - 0 - 999999
+        int randomOTP = (int) ((Math.random() * (999999 - 1)) + 1);
+        String token = String.format("%06d", randomOTP);
+
+        ConfirmationToken confirmationToken = new ConfirmationToken(
+                token,
+                LocalDateTime.now(),
+                LocalDateTime.now().plusMinutes(5), // Expires after 5 minutes
+                user
+        );
+
+        confirmationTokenService.saveConfirmationToken(confirmationToken);
+        log.info("Reset OTP generated");
+        //sending confirmation OTP
+
+        return "OTP SENT TO " + msisdn;
     }
 }
