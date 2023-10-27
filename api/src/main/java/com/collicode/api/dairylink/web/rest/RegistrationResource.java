@@ -46,7 +46,7 @@ public class RegistrationResource {
         }
     }
     @PostMapping(path = "/confirmFarmerToken")
-    ResponseEntity<?> updateAndConfirmFarmerToken(@RequestBody UserTokenConfirmRequest userTokenConfirmRequest){
+    ResponseEntity<?> updatePasswordAndConfirmFarmerToken(@RequestBody UserTokenConfirmRequest userTokenConfirmRequest){
         log.info("Request to confirm farmer token and password");
         try{
             Optional<User> updateFarmer =userService.confirmFarmerTokenAndUpdatePassword(userTokenConfirmRequest);
