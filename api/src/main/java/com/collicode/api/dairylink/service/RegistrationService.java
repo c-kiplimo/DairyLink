@@ -103,6 +103,13 @@ public class RegistrationService {
         response.add(savedCooperative);
         response.add(token);
 
+        User user =(User) response.get(0);
+
+        //Sending confirmation OTP
+        String token1 =(String) response.get(1);
+        NotificationHelper.sendConfirmationToken(token1, "CONFIRM", user);
+
+
     }
 
     @Transactional
