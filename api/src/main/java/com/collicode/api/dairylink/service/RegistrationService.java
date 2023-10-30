@@ -7,6 +7,7 @@ import com.collicode.api.dairylink.domain.enums.CooperativeStatus;
 import com.collicode.api.dairylink.domain.enums.UserRole;
 import com.collicode.api.dairylink.repository.UserRepository;
 import com.collicode.api.dairylink.util.EmailValidator;
+import com.collicode.api.dairylink.util.NotificationHelper;
 import com.collicode.api.dairylink.web.rest.request.ForgotPassword;
 import com.collicode.api.dairylink.web.rest.request.RegistrationRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -146,7 +147,7 @@ public class RegistrationService {
         confirmationTokenService.saveConfirmationToken(confirmationToken);
         log.info("Reset OTP generated");
         //sending confirmation OTP
-
+        NotificationHelper.sendConfirmationToken(token, "RESET", user);
         return "OTP SENT TO " + msisdn;
     }
     // Reset Password
