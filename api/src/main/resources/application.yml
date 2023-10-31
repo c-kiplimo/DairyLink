@@ -1,0 +1,25 @@
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+  port: 9097
+
+spring:
+  datasource:
+    url: jdbc:mysql://164.92.70.172:3315/dairylink?allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf8&useSSL=false&autoReconnect=true
+    username: root
+    password: natujenge
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+    show-sql: true
+
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+

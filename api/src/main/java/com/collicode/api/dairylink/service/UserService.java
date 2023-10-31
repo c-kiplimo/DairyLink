@@ -11,6 +11,8 @@ import com.collicode.api.dairylink.service.mapper.UserMapper;
 import com.collicode.api.dairylink.web.rest.request.FarmerRequest;
 import com.collicode.api.dairylink.web.rest.request.UserTokenConfirmRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,7 +22,7 @@ import java.util.Optional;
 
 @Service
 @Slf4j
-public class UserService {
+public class UserService  implements UserDetailsService {
     private final static String USER_NOT_FOUND_MSG = "User with Email %s not found!";
     private final static String USER_EXISTS = "Email %s Taken!";
     private final CooperativeMapper cooperativeMapper;
@@ -28,7 +30,8 @@ public class UserService {
     private final ConfirmationTokenService confirmationTokenService;
     private final UserMapper userMapper;
     private final FarmerMapper farmerMapper;
-    private final PasswordEncoder passwordEncoder;
+
+    private final   PasswordEncoder passwordEncoder;
 
     public UserService(CooperativeMapper cooperativeMapper, UserRepository userRepository, ConfirmationTokenService confirmationTokenService, UserMapper userMapper, FarmerMapper farmerMapper, PasswordEncoder passwordEncoder) {
         this.cooperativeMapper = cooperativeMapper;
@@ -139,5 +142,18 @@ public class UserService {
         log.info("Request to find user with phone : {}", msisdn);
 
         return userRepository.findByMsisdn(msisdn);
+    }
+    public Optional<User> findByEmail(String email) {
+        log.info("Request to find user with email : {}", email);
+
+        Optional<User> user = userRepository.findByEmail(email);
+        log.info("Found user : {}", user);
+        return user;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        return userRepository.findByEmail(email).orElseThrow(() ->
+                new UsernameNotFoundException(String.format(USER_NOT_FOUND_MSG, email)));
     }
 }
