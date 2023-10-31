@@ -10,11 +10,13 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Collections;
 
 @Setter
 @Getter
@@ -53,6 +55,8 @@ public class User implements UserDetails {
     private String village;
     @Enumerated(EnumType.STRING)
     private FarmerStatus farmerStatus;
+    private int numberOfCows;
+    private int numberOfLactatingCows;
 
     private  String createdBy;
     private String lastUpdatedBy;
@@ -64,36 +68,59 @@ public class User implements UserDetails {
     @UpdateTimestamp
     private LocalDateTime lastUpdatedAt;
 
-    //Object Relationships
-    @ManyToOne
-    @JoinColumn(name="cooperative_id")
-    Cooperative cooperative;
+    //Cooperative Details
+    private String cooperativeName;
+    @Enumerated(EnumType.STRING)
+    private CooperativeStatus cooperativeStatus;
+    // Access fields
+    private Boolean locked = false;
+    private Boolean enabled = false;
 
+    public User(){
 
+    }
+    // User Registration Constructor
+    public User(String firstName, String lastName, String email, String msisdn, String password, UserRole userRole) {
+        this.fullName = firstName + ' ' + lastName;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.username = email;
+        this.msisdn = msisdn;
+        this.password = password;
+        this.userRole = userRole;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null;
+
+        SimpleGrantedAuthority grantedAuthority = new SimpleGrantedAuthority(userRole.name());
+
+        return Collections.singletonList(grantedAuthority);
+
     }
 
     @Override
     public String getPassword() {
-        return null;
+        return password;
     }
 
     @Override
     public String getUsername() {
-        return null;
+        return email;
+    }
+    public String getFullName() {
+        return fullName;
     }
 
     @Override
     public boolean isAccountNonExpired() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return false;
+        return !locked;
     }
 
     @Override
@@ -103,6 +130,19 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return false;
+        return enabled;
+    }
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", fullName='" + fullName + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", cooperativeName='" + cooperativeName + '\'' +
+                ", msisdn='" + msisdn + '\'' +
+                ", email='" + email + '\'' +
+                ", username='" + username + '\'' +
+                '}';
     }
 }
